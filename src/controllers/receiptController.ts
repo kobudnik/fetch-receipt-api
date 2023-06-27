@@ -14,10 +14,11 @@ export const receiptController: ReceiptController = {
     const id = generateID();
     res.locals.id = id;
     savedReceipts[id] = { ...req.body, points: 0 };
-    calculatePointsTotal(id);
+    calculatePoints(id);
     console.log(savedReceipts);
     return next();
   },
+
   validateReceipt: (req, res, next) => {
     const receipt: Receipt = req.body;
     if (
@@ -49,14 +50,41 @@ export const receiptController: ReceiptController = {
   }
 };
 
-const calculatePointsTotal = (receiptID: string) => {
+const calculatePoints = (receiptID: string) => {
   const receipt = savedReceipts[receiptID];
-  receipt.points += calculatePointsFromName(receipt.retailer);
+  receipt.points += calculatePointsFromRetailer(receipt.retailer);
+  receipt.points += calculatePointsFromTotal(receipt.total);
+  receipt.points += calculatePointsFromItems(receipt.items);
 };
 
-const calculatePointsFromName = (retailerName: string) => {
+const calculatePointsFromRetailer = (retailerName: string) => {
   const alphanumericRegex = /[a-zA-Z0-9]+/g;
   const validLetters = retailerName.match(alphanumericRegex);
   if (!validLetters) return 0;
   return validLetters[0].length;
+};
+
+const calculatePointsFromTotal = (totalPrice: string) => {
+  let points = 0;
+  if (Number(totalPrice) % 1 === 0) points += 50;
+  if (Number(totalPrice) % 0.25 === 0) points += 25;
+  return points;
+};
+
+const calculatePointsFromItems = (
+  items: { shortDescription: string; price: string }[]
+) => {
+  let points = Math.floor(items.length / 2);
+  for (let i = 0; i < items.length; i++) {
+    if (validateTrimmedLength(items[i].shortDescription)) {
+      const pointsEarned = Math.ceil(Number(items[i].price) * 0.2);
+      points += pointsEarned;
+    }
+  }
+
+  return points;
+};
+
+const validateTrimmedLength = (description: string) => {
+  return description.trim().length % 3 === 0;
 };
