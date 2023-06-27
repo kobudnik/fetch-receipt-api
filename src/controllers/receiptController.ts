@@ -13,7 +13,8 @@ export const receiptController: ReceiptController = {
   processReceipt: (req, res, next) => {
     const id = generateID();
     res.locals.id = id;
-    savedReceipts[id] = req.body;
+    savedReceipts[id] = { ...req.body, points: 0 };
+    calculatePointsTotal(id);
     console.log(savedReceipts);
     return next();
   },
@@ -46,4 +47,16 @@ export const receiptController: ReceiptController = {
       return next();
     }
   }
+};
+
+const calculatePointsTotal = (receiptID: string) => {
+  const receipt = savedReceipts[receiptID];
+  receipt.points += calculatePointsFromName(receipt.retailer);
+};
+
+const calculatePointsFromName = (retailerName: string) => {
+  const alphanumericRegex = /[a-zA-Z0-9]+/g;
+  const validLetters = retailerName.match(alphanumericRegex);
+  if (!validLetters) return 0;
+  return validLetters[0].length;
 };

@@ -25,4 +25,5 @@ export interface Receipt {
     price: string;
   }[];
   total: string;
+  points: number;
 }
