@@ -55,13 +55,15 @@ const calculatePoints = (receiptID: string) => {
   receipt.points += calculatePointsFromRetailer(receipt.retailer);
   receipt.points += calculatePointsFromTotal(receipt.total);
   receipt.points += calculatePointsFromItems(receipt.items);
+  receipt.points += calculatePointsFromDay(receipt.purchaseDate);
+  receipt.points += calculatePointsFromTime(receipt.purchaseTime);
 };
 
 const calculatePointsFromRetailer = (retailerName: string) => {
   const alphanumericRegex = /[a-zA-Z0-9]+/g;
   const validLetters = retailerName.match(alphanumericRegex);
   if (!validLetters) return 0;
-  return validLetters[0].length;
+  return validLetters.join('').length;
 };
 
 const calculatePointsFromTotal = (totalPrice: string) => {
@@ -74,17 +76,29 @@ const calculatePointsFromTotal = (totalPrice: string) => {
 const calculatePointsFromItems = (
   items: { shortDescription: string; price: string }[]
 ) => {
-  let points = Math.floor(items.length / 2);
+  let points = Math.floor(items.length / 2) * 5;
   for (let i = 0; i < items.length; i++) {
     if (validateTrimmedLength(items[i].shortDescription)) {
-      const pointsEarned = Math.ceil(Number(items[i].price) * 0.2);
-      points += pointsEarned;
+      points += Math.ceil(Number(items[i].price) * 0.2);
     }
   }
-
   return points;
 };
 
 const validateTrimmedLength = (description: string) => {
   return description.trim().length % 3 === 0;
+};
+
+const calculatePointsFromDay = (purchaseDate: string) => {
+  const day = purchaseDate.split('-')[2];
+  if (Number(day) % 2 === 0) return 0;
+  return 6;
+};
+
+const calculatePointsFromTime = (purchaseTime: string) => {
+  const time = purchaseTime.split(':');
+  const hour = Number(time[0]);
+  const minute = Number(time[1]);
+  if ((hour === 14 && minute > 0) || hour === 15) return 10;
+  return 0;
 };
