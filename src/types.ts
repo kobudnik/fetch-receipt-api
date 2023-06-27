@@ -14,6 +14,7 @@ export type MiddlewareFunction = (
 export interface ReceiptController {
   validateReceipt: MiddlewareFunction;
   processReceipt: MiddlewareFunction;
+  getPoints: MiddlewareFunction;
 }
 
 export interface Receipt {

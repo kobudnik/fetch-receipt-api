@@ -11,11 +11,10 @@ const errorTemplate = {
 
 export const receiptController: ReceiptController = {
   processReceipt: (req, res, next) => {
-    const id = generateID();
+    const id = generateID().split('-').join('');
     res.locals.id = id;
     savedReceipts[id] = { ...req.body, points: 0 };
     calculatePoints(id);
-    console.log(savedReceipts);
     return next();
   },
 
@@ -32,7 +31,7 @@ export const receiptController: ReceiptController = {
     ) {
       return next({
         ...errorTemplate,
-        message: 'Receipt is missing properties'
+        message: 'Malformed Query: Receipt is missing properties'
       });
     } else if (
       typeof receipt.retailer !== 'string' ||
@@ -43,10 +42,20 @@ export const receiptController: ReceiptController = {
       typeof receipt.items[0].price !== 'string' ||
       typeof receipt.total !== 'string'
     ) {
-      return next({ ...errorTemplate, message: 'Invalid data types' });
+      return next({
+        ...errorTemplate,
+        message: 'Malformed query: Invalid data types'
+      });
     } else {
       return next();
     }
+  },
+
+  getPoints: (req, res, next) => {
+    if (!savedReceipts[req.params.id])
+      return next({ ...errorTemplate, status: 404, message: 'Invalid ID' });
+    res.locals.points = savedReceipts[req.params.id].points;
+    return next();
   }
 };
 
