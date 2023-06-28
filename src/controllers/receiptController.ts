@@ -10,8 +10,14 @@ const errorTemplate = {
 };
 
 export const receiptController: ReceiptController = {
+  getPoints: (req, res, next) => {
+    if (!savedReceipts[req.params.id])
+      return next({ ...errorTemplate, status: 404, message: 'Invalid ID' });
+    res.locals.points = savedReceipts[req.params.id].points;
+    return next();
+  },
   processReceipt: (req, res, next) => {
-    const id = generateID().split('-').join('');
+    const id = generateID().replaceAll('-', '');
     res.locals.id = id;
     savedReceipts[id] = { ...req.body, points: 0 };
     calculatePoints(id);
@@ -49,42 +55,35 @@ export const receiptController: ReceiptController = {
     } else {
       return next();
     }
-  },
-
-  getPoints: (req, res, next) => {
-    if (!savedReceipts[req.params.id])
-      return next({ ...errorTemplate, status: 404, message: 'Invalid ID' });
-    res.locals.points = savedReceipts[req.params.id].points;
-    return next();
   }
 };
 
-const calculatePoints = (receiptID: string) => {
+function calculatePoints(receiptID: string) {
   const receipt = savedReceipts[receiptID];
   receipt.points += calculatePointsFromRetailer(receipt.retailer);
   receipt.points += calculatePointsFromTotal(receipt.total);
   receipt.points += calculatePointsFromItems(receipt.items);
   receipt.points += calculatePointsFromDay(receipt.purchaseDate);
   receipt.points += calculatePointsFromTime(receipt.purchaseTime);
-};
+}
 
-const calculatePointsFromRetailer = (retailerName: string) => {
+function calculatePointsFromRetailer(retailerName: string) {
   const alphanumericRegex = /[a-zA-Z0-9]+/g;
   const validLetters = retailerName.match(alphanumericRegex);
   if (!validLetters) return 0;
   return validLetters.join('').length;
-};
+}
 
-const calculatePointsFromTotal = (totalPrice: string) => {
+function calculatePointsFromTotal(totalPrice: string) {
   let points = 0;
   if (Number(totalPrice) % 1 === 0) points += 50;
   if (Number(totalPrice) % 0.25 === 0) points += 25;
   return points;
-};
+}
 
-const calculatePointsFromItems = (
+function calculatePointsFromItems(
   items: { shortDescription: string; price: string }[]
-) => {
+) {
   let points = Math.floor(items.length / 2) * 5;
   for (let i = 0; i < items.length; i++) {
     if (validateTrimmedLength(items[i].shortDescription)) {
@@ -92,22 +91,22 @@ const calculatePointsFromItems = (
     }
   }
   return points;
-};
+}
 
-const validateTrimmedLength = (description: string) => {
+function validateTrimmedLength(description: string) {
   return description.trim().length % 3 === 0;
-};
+}
 
-const calculatePointsFromDay = (purchaseDate: string) => {
+function calculatePointsFromDay(purchaseDate: string) {
   const day = purchaseDate.split('-')[2];
-  if (Number(day) % 2 === 0) return 0;
-  return 6;
-};
+  if (Number(day) % 2 !== 0) return 6;
+  return 0;
+}
 
-const calculatePointsFromTime = (purchaseTime: string) => {
+function calculatePointsFromTime(purchaseTime: string) {
   const time = purchaseTime.split(':');
   const hour = Number(time[0]);
   const minute = Number(time[1]);
   if ((hour === 14 && minute > 0) || hour === 15) return 10;
   return 0;
-};
+}
