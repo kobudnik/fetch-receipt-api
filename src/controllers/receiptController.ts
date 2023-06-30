@@ -69,7 +69,7 @@ export const receiptController: ReceiptController = {
   }
 };
 
-function calculatePoints(
+export function calculatePoints(
   receiptID: string,
   savedReceipts: { [key: string]: ProcessedReceipt }
 ) {
@@ -81,21 +81,21 @@ function calculatePoints(
   receipt.points += calculatePointsFromTime(receipt.purchaseTime);
 }
 
-function calculatePointsFromRetailer(retailerName: string) {
+export function calculatePointsFromRetailer(retailerName: string) {
   const alphanumericRegex = /[a-zA-Z0-9]+/g;
   const validLetters = retailerName.match(alphanumericRegex);
   if (!validLetters) return 0;
   return validLetters.join('').length;
 }
 
-function calculatePointsFromTotal(totalPrice: string) {
+export function calculatePointsFromTotal(totalPrice: string) {
   let points = 0;
   if (Number(totalPrice) % 1 === 0) points += 50;
   if (Number(totalPrice) % 0.25 === 0) points += 25;
   return points;
 }
 
-function calculatePointsFromItems(
+export function calculatePointsFromItems(
   items: { shortDescription: string; price: string }[]
 ) {
   let points = Math.floor(items.length / 2) * 5;
@@ -107,17 +107,17 @@ function calculatePointsFromItems(
   return points;
 }
 
-function isQualifyingLength(description: string) {
+export function isQualifyingLength(description: string) {
   return description.trim().length % 3 === 0;
 }
 
-function calculatePointsFromDay(purchaseDate: string) {
+export function calculatePointsFromDay(purchaseDate: string) {
   const day = Number(purchaseDate.split('-')[2]);
   if (day % 2 !== 0) return 6;
   return 0;
 }
 
-function calculatePointsFromTime(purchaseTime: string) {
+export function calculatePointsFromTime(purchaseTime: string) {
   const time = purchaseTime.split(':');
   const hour = Number(time[0]);
   const minute = Number(time[1]);

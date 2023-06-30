@@ -37,9 +37,7 @@ describe('Receipt Endpoint Testing', () => {
   }
 
   describe('POST /receipts/process', () => {
-    beforeAll(() => {
-      resetReceipts();
-    });
+    beforeAll(() => resetReceipts());
 
     it('should handle submitted receipts with missing properties', async () => {
       const response = await request(app)
