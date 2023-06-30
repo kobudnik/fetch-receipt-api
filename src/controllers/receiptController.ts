@@ -1,13 +1,13 @@
 import { Receipt, ReceiptController } from '../types';
 import { v4 as generateID } from 'uuid';
 
-const savedReceipts: { [key: string]: Receipt } = {};
-
 const errorTemplate = {
   log: 'Error in receipt middleware',
   status: 400,
   message: 'Error in receipt middleware'
 };
+
+const savedReceipts: { [key: string]: Receipt } = {};
 
 export const receiptController: ReceiptController = {
   getPoints: (req, res, next) => {
@@ -36,19 +36,6 @@ export const receiptController: ReceiptController = {
   validateReceipt: (req, res, next) => {
     const receipt: Receipt = req.body;
     if (
-      !receipt.retailer ||
-      !receipt.purchaseDate ||
-      !receipt.purchaseTime ||
-      !receipt.items ||
-      !receipt.items[0].shortDescription ||
-      !receipt.items[0].price ||
-      !receipt.total
-    ) {
-      return next({
-        ...errorTemplate,
-        message: 'Malformed Query: Missing properties'
-      });
-    } else if (
       typeof receipt.retailer !== 'string' ||
       typeof receipt.purchaseDate !== 'string' ||
       typeof receipt.purchaseTime !== 'string' ||
@@ -56,17 +43,31 @@ export const receiptController: ReceiptController = {
       receipt.items.some(
         (item) =>
           typeof item.shortDescription !== 'string' ||
-          typeof item.price !== 'string'
+          typeof item.price !== 'string' ||
+          isNaN(Number(item.price))
       ) ||
-      typeof receipt.total !== 'string'
+      typeof receipt.total !== 'string' ||
+      isNaN(Number(receipt.total))
     ) {
       return next({
         ...errorTemplate,
-        message: 'Malformed query: Invalid data types'
+        log: 'Error validating receipt',
+        message: 'Malformed query: Missing properties or invalid data types'
       });
-    } else {
-      return next();
     }
+    //Validate date and time string formatting
+    const day = Number(receipt.purchaseDate.split('-')[2]);
+    if (isNaN(day)) {
+      return next({ ...errorTemplate, message: 'Invalid date formatting' });
+    }
+    const time = receipt.purchaseTime.split(':');
+    const hour = Number(time[0]);
+    const minute = Number(time[1]);
+    if (isNaN(hour) || isNaN(minute)) {
+      return next({ ...errorTemplate, message: 'Invalid time formatting' });
+    }
+
+    return next();
   }
 };
 
@@ -110,8 +111,8 @@ function isQualifyingLength(description: string) {
 }
 
 function calculatePointsFromDay(purchaseDate: string) {
-  const day = purchaseDate.split('-')[2];
-  if (Number(day) % 2 !== 0) return 6;
+  const day = Number(purchaseDate.split('-')[2]);
+  if (day % 2 !== 0) return 6;
   return 0;
 }
 
