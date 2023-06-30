@@ -9,7 +9,7 @@
     "strict": true,
     "removeComments": true,
     "esModuleInterop": true,
-    "types": ["node", "express", "jest", "uuid"],
+    "types": ["node", "express", "jest", "uuid", "supertest"],
     "noImplicitAny": true
   },
   "include": ["src/**/*"]

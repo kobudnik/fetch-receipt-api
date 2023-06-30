@@ -27,5 +27,8 @@ export interface Receipt {
     price: string;
   }[];
   total: string;
+}
+
+export interface ProcessedReceipt extends Receipt {
   points: number;
 }

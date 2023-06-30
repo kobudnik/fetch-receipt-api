@@ -1,5 +1,7 @@
-import { Receipt, ReceiptController } from '../types';
+import { Receipt, ProcessedReceipt, ReceiptController } from '../types';
 import { v4 as generateID } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
 const errorTemplate = {
   log: 'Error in receipt middleware',
@@ -7,15 +9,27 @@ const errorTemplate = {
   message: 'Error in receipt middleware'
 };
 
-const savedReceipts: { [key: string]: Receipt } = {};
+const pathToReceipts =
+  process.env.NODE_ENV === 'test'
+    ? path.resolve(__dirname, '../data/receipts.test.json')
+    : path.resolve(__dirname, '../data/receipts.json');
 
+// Middleware
 export const receiptController: ReceiptController = {
   getPoints: (req, res, next) => {
-    res.locals.points = savedReceipts[req.params.id].points;
+    const savedReceipts = getReceipts();
+    if (!savedReceipts[req.params.id]) {
+      return next({
+        ...errorTemplate,
+        status: 404,
+        message: 'No receipt found for that id'
+      });
+    }
     return next();
   },
 
   hasReceipt: (req, res, next) => {
+    const savedReceipts = getReceipts();
     if (!savedReceipts[req.params.id]) {
       return next({
         ...errorTemplate,
@@ -26,10 +40,12 @@ export const receiptController: ReceiptController = {
     return next();
   },
   processReceipt: (req, res, next) => {
+    const savedReceipts = getReceipts();
     const id = generateID();
     res.locals.id = id;
     savedReceipts[id] = { ...req.body, points: 0 };
-    calculatePoints(id);
+    calculatePoints(id, savedReceipts);
+    fs.writeFileSync(pathToReceipts, JSON.stringify(savedReceipts), 'utf-8');
     return next();
   },
 
@@ -63,7 +79,7 @@ export const receiptController: ReceiptController = {
     const time = receipt.purchaseTime.split(':');
     const hour = Number(time[0]);
     const minute = Number(time[1]);
-    if (isNaN(hour) || isNaN(minute)) {
+    if (isNaN(hour) || isNaN(minute) || time[1].length === 0) {
       return next({ ...errorTemplate, message: 'Invalid time formatting' });
     }
 
@@ -71,7 +87,10 @@ export const receiptController: ReceiptController = {
   }
 };
 
-function calculatePoints(receiptID: string) {
+function calculatePoints(
+  receiptID: string,
+  savedReceipts: { [key: string]: ProcessedReceipt }
+) {
   const receipt = savedReceipts[receiptID];
   receipt.points += calculatePointsFromRetailer(receipt.retailer);
   receipt.points += calculatePointsFromTotal(receipt.total);
@@ -123,3 +142,10 @@ function calculatePointsFromTime(purchaseTime: string) {
   if ((hour === 14 && minute > 0) || hour === 15) return 10;
   return 0;
 }
+
+const getReceipts = () => {
+  const savedReceipts: { [key: string]: ProcessedReceipt } = JSON.parse(
+    fs.readFileSync(pathToReceipts, 'utf-8')
+  );
+  return savedReceipts;
+};
