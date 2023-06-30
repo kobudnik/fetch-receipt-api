@@ -4,7 +4,7 @@ import receiptRouter from './routes/receipts';
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use('/receipts', receiptRouter);
 app.all('*', (req, res) => {
   return res.status(404).json({ message: 'Route not found' });

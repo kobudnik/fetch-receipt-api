@@ -132,9 +132,8 @@ const errorTemplate = {
 
 const pathToReceipts =
   process.env.NODE_ENV === 'test'
-    ? path.resolve(__dirname, '../data/receipts.test.json')
-    : path.resolve(__dirname, '../data/receipts.json');
-
+    ? path.resolve(process.cwd(), 'src/data/receipts.test.json')
+    : path.resolve(process.cwd(), 'src/data/receipts.json');
 function getReceipts() {
   const savedReceipts: { [key: string]: ProcessedReceipt } = JSON.parse(
     fs.readFileSync(pathToReceipts, 'utf-8')

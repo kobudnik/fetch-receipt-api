@@ -5,12 +5,12 @@
     "lib": ["es6"],
     "allowJs": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "removeComments": true,
     "esModuleInterop": true,
     "types": ["node", "express", "jest", "uuid", "supertest"],
     "noImplicitAny": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "**/__tests__/**/*"]
 }
