@@ -1,5 +1,6 @@
 import { Receipt } from '../types';
-export const validReceiptA: Receipt = {
+//This receipt should amount to 28 points
+export const validReceipt28: Receipt = {
   retailer: 'Target',
   purchaseDate: '2022-01-01',
   purchaseTime: '13:01',
@@ -28,7 +29,8 @@ export const validReceiptA: Receipt = {
   total: '35.35'
 };
 
-export const validReceiptB: Receipt = {
+//This receipt should amount to 109 points
+export const validReceipt109: Receipt = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-20',
   purchaseTime: '14:33',
@@ -51,6 +53,31 @@ export const validReceiptB: Receipt = {
     }
   ],
   total: '9.00'
+};
+
+export const validReceipt59: Receipt = {
+  retailer: 'M&M Corner Market',
+  purchaseDate: '2022-03-20',
+  purchaseTime: '14:33',
+  items: [
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    },
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    },
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    },
+    {
+      shortDescription: 'GatoradeLight',
+      price: '2.00'
+    }
+  ],
+  total: '8.75'
 };
 
 export const invalidDateFormat: Receipt = {
@@ -80,7 +107,7 @@ export const invalidDateFormat: Receipt = {
 
 export const invalidTimeFormat: Receipt = {
   retailer: 'M&M Corner Market',
-  purchaseDate: '2022-03-k',
+  purchaseDate: '2022-03-01',
   purchaseTime: '14:',
   items: [
     {
@@ -126,6 +153,18 @@ export const missingProperties: Partial<Receipt> = {
   total: '9.00'
 };
 
+export const invalidDataType = {
+  retailer: 'Target',
+  purchaseDate: 2022,
+  purchaseTime: '13:01',
+  items: {
+    shortDescription: 'Mountain Dew 12PK',
+    price: '6.49'
+  },
+
+  total: '35.35'
+};
+
 export const invalidItemsPrice = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-20',
@@ -167,6 +206,30 @@ export const invalidItemsDescription = {
     {
       shortDescription: 123,
       price: '2.25'
+    },
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    }
+  ],
+  total: '9.00'
+};
+
+export const missingItemsProperty = {
+  retailer: 'M&M Corner Market',
+  purchaseDate: '2022-03-20',
+  purchaseTime: '14:33',
+  items: [
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    },
+    {
+      shortDescription: 'Gatorade',
+      price: '2.25'
+    },
+    {
+      shortDescription: 'Gatorade'
     },
     {
       shortDescription: 'Gatorade',
