@@ -15,6 +15,7 @@ export interface ReceiptController {
   validateReceipt: MiddlewareFunction;
   processReceipt: MiddlewareFunction;
   getPoints: MiddlewareFunction;
+  hasReceipt: MiddlewareFunction;
 }
 
 export interface Receipt {

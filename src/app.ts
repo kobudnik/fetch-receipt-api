@@ -4,6 +4,7 @@ import receiptRouter from './routes/receipts';
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded());
 app.use('/receipts', receiptRouter);
 app.all('*', (req, res) => {
   return res.status(404).json({ message: 'Route not found' });
@@ -16,7 +17,6 @@ app.use((err: ServerError, req: Request, res: Response, next: NextFunction) => {
     message: 'Global error handler invoked'
   };
   const errorObj = { ...defaultErr, ...err };
-  console.log(errorObj.log);
   return res.status(errorObj.status).json({ message: errorObj.message });
 });
 export default app;

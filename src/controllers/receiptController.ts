@@ -11,13 +11,22 @@ const errorTemplate = {
 
 export const receiptController: ReceiptController = {
   getPoints: (req, res, next) => {
-    if (!savedReceipts[req.params.id])
-      return next({ ...errorTemplate, status: 404, message: 'Invalid ID' });
     res.locals.points = savedReceipts[req.params.id].points;
     return next();
   },
+
+  hasReceipt: (req, res, next) => {
+    if (!savedReceipts[req.params.id]) {
+      return next({
+        ...errorTemplate,
+        status: 404,
+        message: 'No receipt found for that id'
+      });
+    }
+    return next();
+  },
   processReceipt: (req, res, next) => {
-    const id = generateID().replaceAll('-', '');
+    const id = generateID();
     res.locals.id = id;
     savedReceipts[id] = { ...req.body, points: 0 };
     calculatePoints(id);
@@ -37,15 +46,18 @@ export const receiptController: ReceiptController = {
     ) {
       return next({
         ...errorTemplate,
-        message: 'Malformed Query: Receipt is missing properties'
+        message: 'Malformed Query: Missing properties'
       });
     } else if (
       typeof receipt.retailer !== 'string' ||
       typeof receipt.purchaseDate !== 'string' ||
       typeof receipt.purchaseTime !== 'string' ||
       !Array.isArray(receipt.items) ||
-      typeof receipt.items[0].shortDescription !== 'string' ||
-      typeof receipt.items[0].price !== 'string' ||
+      receipt.items.some(
+        (item) =>
+          typeof item.shortDescription !== 'string' ||
+          typeof item.price !== 'string'
+      ) ||
       typeof receipt.total !== 'string'
     ) {
       return next({
@@ -86,14 +98,14 @@ function calculatePointsFromItems(
 ) {
   let points = Math.floor(items.length / 2) * 5;
   for (let i = 0; i < items.length; i++) {
-    if (validateTrimmedLength(items[i].shortDescription)) {
+    if (isQualifyingLength(items[i].shortDescription)) {
       points += Math.ceil(Number(items[i].price) * 0.2);
     }
   }
   return points;
 }
 
-function validateTrimmedLength(description: string) {
+function isQualifyingLength(description: string) {
   return description.trim().length % 3 === 0;
 }
 
