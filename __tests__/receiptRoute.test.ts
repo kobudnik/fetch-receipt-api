@@ -36,9 +36,7 @@ describe('Receipt Endpoint Testing', () => {
 
   describe('POST /receipts/process', () => {
     beforeAll(() => {
-      delete require.cache[pathToReceipts];
       resetReceipts();
-      console.log(getReceipts(), 'in DESCRIBE');
     });
 
     it('should return a 200 status, return a generated ID, calculate points, and save the receipt with points', async () => {

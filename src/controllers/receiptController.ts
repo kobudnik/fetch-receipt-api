@@ -3,28 +3,10 @@ import { v4 as generateID } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 
-const errorTemplate = {
-  log: 'Error in receipt middleware',
-  status: 400,
-  message: 'Error in receipt middleware'
-};
-
-const pathToReceipts =
-  process.env.NODE_ENV === 'test'
-    ? path.resolve(__dirname, '../data/receipts.test.json')
-    : path.resolve(__dirname, '../data/receipts.json');
-
-// Middleware
 export const receiptController: ReceiptController = {
   getPoints: (req, res, next) => {
     const savedReceipts = getReceipts();
-    if (!savedReceipts[req.params.id]) {
-      return next({
-        ...errorTemplate,
-        status: 404,
-        message: 'No receipt found for that id'
-      });
-    }
+    res.locals.points = savedReceipts[req.params.id].points;
     return next();
   },
 
@@ -142,10 +124,20 @@ function calculatePointsFromTime(purchaseTime: string) {
   if ((hour === 14 && minute > 0) || hour === 15) return 10;
   return 0;
 }
+const errorTemplate = {
+  log: 'Error in receipt middleware',
+  status: 400,
+  message: 'Error in receipt middleware'
+};
 
-const getReceipts = () => {
+const pathToReceipts =
+  process.env.NODE_ENV === 'test'
+    ? path.resolve(__dirname, '../data/receipts.test.json')
+    : path.resolve(__dirname, '../data/receipts.json');
+
+function getReceipts() {
   const savedReceipts: { [key: string]: ProcessedReceipt } = JSON.parse(
     fs.readFileSync(pathToReceipts, 'utf-8')
   );
   return savedReceipts;
-};
+}
