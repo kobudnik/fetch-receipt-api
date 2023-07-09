@@ -12,5 +12,5 @@
     "types": ["node", "express", "jest", "uuid", "supertest"],
     "noImplicitAny": true
   },
-  "include": ["src/**/*", "**/__tests__/**/*"]
+  "include": ["src/**/*"]
 }
