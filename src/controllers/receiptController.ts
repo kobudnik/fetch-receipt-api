@@ -1,7 +1,7 @@
-import { Receipt, ProcessedReceipt, ReceiptController } from '../types';
+import { SubmittedReceipt, ReceiptController } from '../types';
+import { getReceipts, pathToReceipts } from '../utils/receiptUtils';
 import { v4 as generateID } from 'uuid';
 import fs from 'fs';
-import path from 'path';
 
 export const receiptController: ReceiptController = {
   getPoints: (req, res, next) => {
@@ -21,18 +21,20 @@ export const receiptController: ReceiptController = {
     }
     return next();
   },
+
   processReceipt: (req, res, next) => {
     const savedReceipts = getReceipts();
     const id = generateID();
     res.locals.id = id;
-    savedReceipts[id] = { ...req.body, points: 0 };
-    calculatePoints(id, savedReceipts);
+    const points = calculatePoints(req.body as SubmittedReceipt);
+    savedReceipts[id] = { ...req.body, points };
+
     fs.writeFileSync(pathToReceipts, JSON.stringify(savedReceipts), 'utf-8');
     return next();
   },
 
   validateReceipt: (req, res, next) => {
-    const receipt: Receipt = req.body;
+    const receipt: SubmittedReceipt = req.body;
     if (
       typeof receipt.retailer !== 'string' ||
       typeof receipt.purchaseDate !== 'string' ||
@@ -69,16 +71,14 @@ export const receiptController: ReceiptController = {
   }
 };
 
-export function calculatePoints(
-  receiptID: string,
-  savedReceipts: { [key: string]: ProcessedReceipt }
-) {
-  const receipt = savedReceipts[receiptID];
-  receipt.points += calculatePointsFromRetailer(receipt.retailer);
-  receipt.points += calculatePointsFromTotal(receipt.total);
-  receipt.points += calculatePointsFromItems(receipt.items);
-  receipt.points += calculatePointsFromDay(receipt.purchaseDate);
-  receipt.points += calculatePointsFromTime(receipt.purchaseTime);
+export function calculatePoints(receipt: SubmittedReceipt) {
+  let points = 0;
+  points += calculatePointsFromRetailer(receipt.retailer);
+  points += calculatePointsFromTotal(receipt.total);
+  points += calculatePointsFromItems(receipt.items);
+  points += calculatePointsFromDay(receipt.purchaseDate);
+  points += calculatePointsFromTime(receipt.purchaseTime);
+  return points;
 }
 
 export function calculatePointsFromRetailer(retailerName: string) {
@@ -124,19 +124,9 @@ export function calculatePointsFromTime(purchaseTime: string) {
   if ((hour === 14 && minute > 0) || hour === 15) return 10;
   return 0;
 }
+
 const errorTemplate = {
   log: 'Error in receipt middleware',
   status: 400,
   message: 'Error in receipt middleware'
 };
-
-const pathToReceipts =
-  process.env.NODE_ENV === 'test'
-    ? path.resolve(process.cwd(), 'src/data/receipts.test.json')
-    : path.resolve(process.cwd(), 'src/data/receipts.json');
-function getReceipts() {
-  const savedReceipts: { [key: string]: ProcessedReceipt } = JSON.parse(
-    fs.readFileSync(pathToReceipts, 'utf-8')
-  );
-  return savedReceipts;
-}
