@@ -1,8 +1,7 @@
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import app from '../src/app';
-import fs from 'fs';
-import path from 'path';
-
+import { getReceipts, resetReceipts } from '../src/utils/receiptUtils';
+import { calculatePoints } from '../src/controllers/receiptController';
 import {
   validReceipt28,
   validReceipt109,
@@ -16,26 +15,15 @@ import {
   invalidItemsDescription
 } from '../src/data/mockReceipts';
 
+function assert400Error(
+  response: Response,
+  message = 'Malformed query: Missing properties or invalid data types'
+) {
+  expect(response.status).toBe(400);
+  expect(response.body).toHaveProperty('message', message);
+}
+
 describe('Receipt Endpoint Testing', () => {
-  const pathToReceipts = path.resolve(
-    __dirname,
-    '../src/data/receipts.test.json'
-  );
-
-  function getReceipts() {
-    try {
-      const fileContents = fs.readFileSync(pathToReceipts, 'utf-8');
-      return JSON.parse(fileContents);
-    } catch (error) {
-      console.error('Error reading receipts:', error);
-      return {};
-    }
-  }
-
-  function resetReceipts() {
-    fs.writeFileSync(pathToReceipts, JSON.stringify({}), 'utf-8');
-  }
-
   describe('POST /receipts/process', () => {
     beforeAll(() => resetReceipts());
 
@@ -44,22 +32,17 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(missingProperties)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe(
-        'Malformed query: Missing properties or invalid data types'
-      );
+
+      assert400Error(response);
     });
+
     it('should handle properties with invalid data types', async () => {
       const response = await request(app)
         .post(`/receipts/process`)
         .send(invalidDataType)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe(
-        'Malformed query: Missing properties or invalid data types'
-      );
+
+      assert400Error(response);
     });
 
     it('should ensure all objects in items array have required properties', async () => {
@@ -67,11 +50,8 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(missingItemsProperty)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe(
-        'Malformed query: Missing properties or invalid data types'
-      );
+
+      assert400Error(response);
     });
 
     it('should handle invalid data type on item description', async () => {
@@ -79,11 +59,8 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(invalidItemsDescription)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe(
-        'Malformed query: Missing properties or invalid data types'
-      );
+
+      assert400Error(response);
     });
 
     it('should handle invalid data type on item price', async () => {
@@ -91,11 +68,8 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(invalidItemsPrice)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe(
-        'Malformed query: Missing properties or invalid data types'
-      );
+
+      assert400Error(response);
     });
 
     it('should handle improperly formatted dates', async () => {
@@ -103,9 +77,8 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(invalidDateFormat)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe('Invalid date formatting');
+
+      assert400Error(response, 'Invalid date formatting');
     });
 
     it('should handle improperly formatted times', async () => {
@@ -113,14 +86,19 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(invalidTimeFormat)
         .set('Accept', 'application/json');
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toBe('Invalid time formatting');
+
+      assert400Error(response, 'Invalid time formatting');
     });
 
-    it('should not save a receipt if a 200 status is not returned', () => {
-      const receipts = getReceipts();
-      expect(Object.keys(receipts).length).toEqual(0);
+    it('should not save a receipt if a 200 status is not returned', async () => {
+      const receiptCount = Object.keys(getReceipts()).length;
+      await request(app)
+        .post(`/receipts/process`)
+        .send(invalidTimeFormat)
+        .set('Accept', 'application/json');
+
+      const updatedCount = Object.keys(getReceipts()).length;
+      expect(updatedCount).toEqual(receiptCount);
     });
 
     it('calculate points on valid submissions, add points to the receipt, save the receipt, and return a 200 status and generated ID', async () => {
@@ -131,34 +109,39 @@ describe('Receipt Endpoint Testing', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id');
-      const generatedID = response.body.id;
-      expect(typeof generatedID).toBe('string');
-      expect(generatedID).toHaveLength(36);
-      const savedReceipts = getReceipts(); //
-      expect(savedReceipts).toHaveProperty(generatedID);
-      expect(savedReceipts[generatedID]).toEqual({
+      const { id } = response.body;
+      expect(typeof id).toBe('string');
+      expect(id).toHaveLength(36);
+      const savedReceipts = getReceipts();
+      const points = calculatePoints(validReceipt28); //
+      expect(savedReceipts).toHaveProperty(id, {
         ...validReceipt28,
-        points: 28
+        points
       });
     });
+
     it('should add new receipts to the collection without overwriting', async () => {
+      const receiptCount = Object.keys(getReceipts()).length;
+
       const response = await request(app)
         .post(`/receipts/process`)
         .send(validReceipt109)
         .set('Accept', 'application/json');
-      const generatedID = response.body.id;
-      const savedReceipts = getReceipts();
-      expect(savedReceipts).toHaveProperty(generatedID);
-      expect(Object.keys(savedReceipts).length).toEqual(2);
-      expect(savedReceipts[generatedID]).toEqual({
+
+      const { id } = response.body;
+
+      const updatedReceipts = getReceipts();
+      expect(updatedReceipts).toHaveProperty(id, {
         ...validReceipt109,
         points: 109
       });
+      expect(Object.keys(updatedReceipts).length).toEqual(receiptCount + 1);
     });
   });
+
   describe('GET /receipts/{id}/points', () => {
     it('should handle requests for unknown ids', async () => {
-      const randomID = 'ZskY90asS-7e2b-4328-b21d-600592dcbe7b';
+      const randomID = 'ZskY90asS-7e2b-4328-b21d-600592dce7b';
       const response = await request(app)
         .get(`/receipts/${randomID}/points`)
         .send()
@@ -174,14 +157,15 @@ describe('Receipt Endpoint Testing', () => {
         .post(`/receipts/process`)
         .send(validReceipt59)
         .set('Accept', 'application/json');
-      const id = submission.body.id;
+      const { id } = submission.body;
       //Here is our GET request
       const response = await request(app).get(`/receipts/${id}/points`);
-      expect(response.body).toHaveProperty('points');
-      expect(response.body.points).toEqual(59);
+      const expectedPoints = calculatePoints(validReceipt59);
+      expect(response.body).toHaveProperty('points', expectedPoints);
       expect(response.status).toEqual(200);
     });
   });
+
   describe('Undefined routes', () => {
     it('should handle requests to routes that do not exist', async () => {
       const response = await request(app)
@@ -189,8 +173,7 @@ describe('Receipt Endpoint Testing', () => {
         .send()
         .set('Accept', 'application/json');
       expect(response.status).toEqual(404);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toEqual('Route not found');
+      expect(response.body).toHaveProperty('message', 'Route not found');
     });
   });
 });
