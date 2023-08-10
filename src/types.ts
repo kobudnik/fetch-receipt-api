@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+
 export interface ServerError {
   log: string;
   status: number;
@@ -18,7 +19,7 @@ export interface ReceiptController {
   hasReceipt: MiddlewareFunction;
 }
 
-export interface Receipt {
+export interface SubmittedReceipt {
   retailer: string;
   purchaseDate: string;
   purchaseTime: string;
@@ -29,6 +30,10 @@ export interface Receipt {
   total: string;
 }
 
-export interface ProcessedReceipt extends Receipt {
+export interface ProcessedReceipt extends SubmittedReceipt {
   points: number;
+}
+
+export interface ReceiptsStore {
+  [key: string]: ProcessedReceipt;
 }

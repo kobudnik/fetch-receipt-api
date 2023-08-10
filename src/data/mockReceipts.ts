@@ -1,6 +1,7 @@
-import { Receipt } from '../types';
+import { SubmittedReceipt } from '../types';
+
 //This receipt should amount to 28 points
-export const validReceipt28: Receipt = {
+export const validReceipt28: SubmittedReceipt = {
   retailer: 'Target',
   purchaseDate: '2022-01-01',
   purchaseTime: '13:01',
@@ -30,7 +31,7 @@ export const validReceipt28: Receipt = {
 };
 
 //This receipt should amount to 109 points
-export const validReceipt109: Receipt = {
+export const validReceipt109: SubmittedReceipt = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-20',
   purchaseTime: '14:33',
@@ -55,7 +56,7 @@ export const validReceipt109: Receipt = {
   total: '9.00'
 };
 
-export const validReceipt59: Receipt = {
+export const validReceipt59: SubmittedReceipt = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-20',
   purchaseTime: '14:33',
@@ -80,7 +81,7 @@ export const validReceipt59: Receipt = {
   total: '8.75'
 };
 
-export const invalidDateFormat: Receipt = {
+export const invalidDateFormat: SubmittedReceipt = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-k',
   purchaseTime: '14:33',
@@ -105,7 +106,7 @@ export const invalidDateFormat: Receipt = {
   total: '9.00'
 };
 
-export const invalidTimeFormat: Receipt = {
+export const invalidTimeFormat: SubmittedReceipt = {
   retailer: 'M&M Corner Market',
   purchaseDate: '2022-03-01',
   purchaseTime: '14:',
@@ -130,7 +131,7 @@ export const invalidTimeFormat: Receipt = {
   total: '9.00'
 };
 
-export const missingProperties: Partial<Receipt> = {
+export const missingProperties: Partial<SubmittedReceipt> = {
   retailer: 'M&M Corner Market',
   items: [
     {
